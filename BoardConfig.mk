@@ -95,6 +95,7 @@ TW_DEFAULT_EXTERNAL_STORAGE := true
 TW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"
 TARGET_RECOVERY_QCOM_RTC_FIX := true
 BOARD_SUPPRESS_SECURE_ERASE := true
+TW_INPUT_BLACKLIST := "accelerometer"
 
 #Use dlmalloc instead of jemalloc for mallocs
 MALLOC_IMPL := dlmalloc
