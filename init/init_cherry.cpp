@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2014, The Linux Foundation. All rights reserved.
+   Copyright (C) 2017-2018 The Android Open Source Project
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -27,96 +27,98 @@
    IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <android-base/logging.h>
 #include <cstdlib>
-#include <unistd.h>
+#include <fcntl.h>
 #include <fstream>
 #include <string>
+#define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
+#include <sys/_system_properties.h>
+#include <unistd.h>
 
-#include <cutils/properties.h>
-#include "vendor_init.h"
+#include "property_service.h"
 #include "log.h"
-#include "util.h"
 
-#define ISMATCH(a,b)    (!strncmp(a,b,PROP_VALUE_MAX))
+const char *APP_INFO = "/proc/app_info";
 
-void vendor_load_properties()
+using namespace std;
+
+namespace android {
+namespace init {
+
+void property_override(char const prop[], char const value[])
 {
-    char platform[PROP_VALUE_MAX];
-    std::ifstream fin;
-    std::string buf;
-    int rc;
+    prop_info *pi;
 
-    rc = property_get("ro.board.platform", platform, NULL);
-    if (!rc || !ISMATCH(platform, ANDROID_TARGET))
-        return;
+    pi = (prop_info*) __system_property_find(prop);
+    if (pi)
+        __system_property_update(pi, value, strlen(value));
+    else
+        __system_property_add(prop, strlen(prop), value, strlen(value));
+}
 
-    fin.open("/proc/app_info", std::ios::in);
-    if (!fin)
+void set_model(const char *model) {
+    property_override("ro.build.product", model);
+    property_override("ro.product.device", model);
+    property_override("ro.product.model", model);
+    property_override("ro.vendor.product.device", model);
+}
+
+void vendor_load_properties() {
+    ifstream fin;
+    string buf;
+
+    fin.open(APP_INFO, ios::in);
+    if (!fin) {
+        LOG(ERROR) << __func__ << ": Failed to open " << APP_INFO;
         return;
+    }
 
     while (getline(fin, buf))
-        if (buf.find("huawei_fac_product_name") != std::string::npos)
+        if (buf.find("huawei_fac_product_name") != string::npos)
             break;
     fin.close();
 
     /* C8817D */
-    if (buf.find("C8817D") != std::string::npos) {
-        property_set("ro.product.model", "C8817D");
-        property_set("ro.product.device", "C8817D");
-        property_set("ro.build.product", "C8817D");
-        property_set("persist.radio.multisim.config", "dsds");
+    if (buf.find("C8817D") != string::npos) {
+        set_model("C8817D");
     }
     /* C8817E */
-    else if (buf.find("C8817E") != std::string::npos) {
-        property_set("ro.product.model", "C8817E");
-        property_set("ro.product.device", "C8817E");
-        property_set("ro.build.product", "C8817E");
+    else if (buf.find("C8817E") != string::npos) {
+        set_model("C8817E");
     }
     /* G621-TL00 */
-    else if (buf.find("G621-TL00") != std::string::npos) {
-        property_set("ro.product.model", "G621-TL00");
-        property_set("ro.product.device", "G621-TL00");
-        property_set("ro.build.product", "G621-TL00");
-        property_set("persist.radio.multisim.config", "dsds");
+    else if (buf.find("G621-TL00") != string::npos) {
+        set_model("G621-TL00");
     }
     /* G620S-UL00 */
-    else if (buf.find("G620S-UL") != std::string::npos) {
-        property_set("ro.product.model", "G620S-UL00");
-        property_set("ro.product.device", "G620S-UL00");
-        property_set("ro.build.product", "G620S-UL00");
-        property_set("persist.radio.multisim.config", "dsds");
+    else if (buf.find("G620S-UL") != string::npos) {
+        set_model("G620S-UL00");
     }
     /* G620S-L01 */
-    else if (buf.find("G620S-L01") != std::string::npos) {
-        property_set("ro.product.model", "G620S-L01");
-        property_set("ro.product.device", "G620S-L01");
-        property_set("ro.build.product", "G620S-L01");
+    else if (buf.find("G620S-L01") != string::npos) {
+        set_model("G620S-L01");
     }
     /* G620S-L02 */
-    else if (buf.find("G620S-L02") != std::string::npos) {
-        property_set("ro.product.model", "G620S-L02");
-        property_set("ro.product.device", "G620S-L02");
-        property_set("ro.build.product", "G620S-L02");
+    else if (buf.find("G620S-L02") != string::npos) {
+        set_model("G620S-L02");
     }
     /* Che1-CL10 */
-    else if (buf.find("Che1-CL10") != std::string::npos) {
-        property_set("ro.product.model", "Che1-CL10");
-        property_set("ro.product.device", "Che1-CL10");
-        property_set("ro.build.product", "Che1-CL10");
-        property_set("persist.radio.multisim.config", "dsds");
+    else if (buf.find("Che1-CL10") != string::npos) {
+        set_model("Che1-CL10");
     }
     /* Che1-CL20 */
-    else if (buf.find("Che1-CL20") != std::string::npos) {
-        property_set("ro.product.model", "Che1-CL20");
-        property_set("ro.product.device", "Che1-CL20");
-        property_set("ro.build.product", "Che1-CL20");
-        property_set("persist.radio.multisim.config", "dsds");
+    else if (buf.find("Che1-CL20") != string::npos) {
+        set_model("Che1-CL20");
     }
     /* Che1-L04 */
-    else if (buf.find("Che1-L04") != std::string::npos) {
-        property_set("ro.product.model", "Che1-L04");
-        property_set("ro.product.device", "Che1-L04");
-        property_set("ro.build.product", "Che1-L04");
-        property_set("persist.radio.multisim.config", "dsds");
+    else if (buf.find("Che1-L04") != string::npos) {
+        set_model("Che1-L04");
+    }
+    else {
+        LOG(ERROR) << __func__ << ": unexcepted huawei_fac_product_name!";
     }
 }
+
+}  // namespace init
+}  // namespace android
